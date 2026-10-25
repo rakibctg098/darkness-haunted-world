@@ -1,6 +1,6 @@
 /**
- * DARKNESS: THE HAUNTED WORLD
- * In-Game HUD: Health, Stamina, Battery, Objectives, Prompts and Horror Vignettes
+ * DARKNESS: THE HAUNTED WORLD - Phase 2
+ * In-Game HUD: Health, Stamina, Battery, Objectives, Prompts, Locker Slits, and Horror Vignettes
  */
 
 export class HUD {
@@ -14,6 +14,7 @@ export class HUD {
     this.dangerVignette = document.getElementById('danger-vignette');
     this.scareOverlay = document.getElementById('scare-overlay');
     this.notificationBox = document.getElementById('hud-notification');
+    this.lockerSlits = document.getElementById('locker-slits-overlay');
 
     this.notificationTimeout = null;
   }
@@ -25,17 +26,18 @@ export class HUD {
       this.healthBar.style.width = `${hpPercent}%`;
     }
 
-    // Stamina fill
+    // Stamina fill (Green normal, glowing bright neon green when adrenaline is active)
     if (this.staminaBar) {
       const staPercent = Math.max(0, Math.min(100, (player.stamina / 100) * 100));
       this.staminaBar.style.width = `${staPercent}%`;
+      this.staminaBar.style.backgroundColor = player.adrenalineDuration > 0 ? '#00ffcc' : '#22c55e';
     }
 
     // Battery fill
     if (this.batteryBar) {
       const batPercent = Math.max(0, Math.min(100, (player.battery / 100) * 100));
       this.batteryBar.style.width = `${batPercent}%`;
-      this.batteryBar.style.backgroundColor = player.battery < 20 ? '#ff3333' : '#e6b800';
+      this.batteryBar.style.backgroundColor = player.battery < 20 ? '#ff3333' : '#eab308';
     }
 
     // Objective text
@@ -46,11 +48,23 @@ export class HUD {
       }
     }
 
+    // Locker Slits Overlay
+    if (this.lockerSlits) {
+      this.lockerSlits.style.display = player.isHiding ? 'block' : 'none';
+    }
+
     // Interaction Prompt
     if (this.interactPrompt) {
-      if (focusedInteractable) {
+      if (player.isHiding) {
+        this.interactPrompt.innerText = 'Exit Locker [TAP]';
+        this.interactPrompt.style.display = 'block';
+        this.interactPrompt.style.borderColor = '#00ffcc';
+        this.interactPrompt.style.color = '#00ffcc';
+      } else if (focusedInteractable) {
         this.interactPrompt.innerText = focusedInteractable.prompt || 'Interact [TAP]';
         this.interactPrompt.style.display = 'block';
+        this.interactPrompt.style.borderColor = '#ffd700';
+        this.interactPrompt.style.color = '#ffd700';
       } else {
         this.interactPrompt.style.display = 'none';
       }

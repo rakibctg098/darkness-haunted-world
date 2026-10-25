@@ -51,6 +51,26 @@
       transition: opacity 0.3s ease;
     }
 
+    /* Phase 2: Locker Peeking Slits Overlay */
+    #locker-slits-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
+      display: none;
+    }
+
+    .locker-bar {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      background: rgba(6, 10, 14, 0.96);
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.95);
+    }
+
     /* Flash jumpscare overlay */
     #scare-overlay {
       position: absolute;
@@ -443,6 +463,17 @@
   <!-- Horror Ambience & Danger Effects -->
   <div id="danger-vignette"></div>
 
+  <!-- Phase 2: Locker Peeking Slits Overlay -->
+  <div id="locker-slits-overlay">
+    <div class="locker-bar" style="left: 0; width: 14%;"></div>
+    <div class="locker-bar" style="left: 20%; width: 5%;"></div>
+    <div class="locker-bar" style="left: 32%; width: 6%;"></div>
+    <div class="locker-bar" style="left: 45%; width: 10%;"></div>
+    <div class="locker-bar" style="left: 62%; width: 6%;"></div>
+    <div class="locker-bar" style="left: 75%; width: 5%;"></div>
+    <div class="locker-bar" style="right: 0; width: 14%;"></div>
+  </div>
+
   <div id="scare-overlay">
     <div id="scare-message">HE FOUND YOU</div>
   </div>
@@ -618,8 +649,18 @@
     <h1 class="screen-title" style="color: #ff1122; font-size: 2.4rem;">YOU DIED</h1>
     <h2 class="screen-subtitle" style="color: #bbb;">THE SURGEON CLAIMED ANOTHER SOUL</h2>
     <div class="menu-button-group">
-      <button id="btn-death-restart" class="game-btn game-btn-primary">TRY AGAIN</button>
+      <button id="btn-death-checkpoint" class="game-btn game-btn-primary" style="display: none;">RESUME AT CHECKPOINT</button>
+      <button id="btn-death-restart" class="game-btn">RESTART LEVEL</button>
       <button id="btn-death-menu" class="game-btn">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- NOTE VIEWER MODAL -->
+  <div id="note-modal" class="game-screen ui-interactive" style="display: none; background: rgba(8, 10, 14, 0.92); z-index: 90;">
+    <div class="settings-panel" style="background: #1c1815; border: 2px solid #856142; color: #e8dccb;">
+      <h2 id="note-modal-title" style="color: #ffcc66; font-size: 1.3rem; margin-bottom: 12px; text-transform: uppercase;">NOTE</h2>
+      <p id="note-modal-body" style="font-size: 0.95rem; line-height: 1.6; white-space: pre-line; font-style: italic;"></p>
+      <button id="btn-close-note" class="game-btn game-btn-primary" style="margin-top: 18px;">PUT DOWN NOTE</button>
     </div>
   </div>
 

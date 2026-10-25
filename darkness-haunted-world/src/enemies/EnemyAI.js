@@ -39,12 +39,29 @@ export class EnemyAI {
     const distToPlayer = enemyPos.distanceTo(playerPos);
 
     // 1. Line of Sight & Hearing Sense checks
-    const hasSight = distToPlayer <= this.config.detectionRange &&
-                     collision.hasLineOfSight(enemyPos, playerPos);
+    let hasSight = false;
+    let hearsPlayer = false;
 
-    // Hearing check (sprinting creates loud sound)
-    const hearsPlayer = (player.isSprinting && distToPlayer <= this.config.hearingRangeSprint) ||
-                        (player.isMoving && distToPlayer <= this.config.hearingRangeWalk);
+    if (player.isHiding) {
+      // If player hid while Surgeon was right in front of them (< 2.2m and chasing), the Surgeon catches them
+      if (this.state === 'CHASE' && distToPlayer < 2.2) {
+        hasSight = true;
+      } else {
+        // Player is safely hidden inside locker
+        hasSight = false;
+        hearsPlayer = false;
+        if (this.state === 'CHASE') {
+          // Lost player! Switch to searching around the hiding spot
+          this.startSearch(playerPos);
+        }
+      }
+    } else {
+      hasSight = distToPlayer <= this.config.detectionRange &&
+                 collision.hasLineOfSight(enemyPos, playerPos);
+
+      hearsPlayer = (player.isSprinting && distToPlayer <= this.config.hearingRangeSprint) ||
+                    (player.isMoving && distToPlayer <= this.config.hearingRangeWalk);
+    }
 
     // 2. State Machine Transitions
     switch (this.state) {

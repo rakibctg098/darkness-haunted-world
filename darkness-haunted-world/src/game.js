@@ -1,6 +1,7 @@
 /**
- * DARKNESS: THE HAUNTED WORLD
+ * DARKNESS: THE HAUNTED WORLD - Phase 2
  * Master Game Loop & State Coordinator
+ * Phase 2 features: Lockers, Hiding, Lore Notes Modal, Checkpoints, and Stealth Ratings
  */
 
 import { CONFIG } from './config.js';
@@ -25,7 +26,7 @@ import { CreditsScreen } from './ui/Credits.js';
 
 export class Game {
   constructor() {
-    this.state = 'MENU'; // 'MENU' | 'PLAYING' | 'PAUSED' | 'DEAD' | 'VICTORY'
+    this.state = 'MENU';
     this.container = document.getElementById('game-container');
 
     // Systems
@@ -57,9 +58,11 @@ export class Game {
     this.aboutScreen = null;
     this.creditsScreen = null;
 
-    // Gameplay Metrics
+    // Phase 2 Metrics & Checkpoints
     this.gameStartTime = 0;
     this.elapsedTime = 0;
+    this.timesSpotted = 0;
+    this.lastSpottedState = false;
 
     this.init();
   }
@@ -71,7 +74,6 @@ export class Game {
     this.setupEventListeners();
     this.applySettings(this.settings);
 
-    // Start render loop
     requestAnimationFrame((time) => this.loop(time));
   }
 
@@ -95,7 +97,7 @@ export class Game {
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2));
-    this.renderer.shadowMap.enabled = false; // Off for mobile 60fps performance
+    this.renderer.shadowMap.enabled = false;
     this.container.appendChild(this.renderer.domElement);
 
     window.addEventListener('resize', () => this.onWindowResize());
@@ -107,7 +109,7 @@ export class Game {
     this.mainMenu = new MainMenu({
       onStart: () => this.startGame(),
       onLevelSelect: () => {
-        this.hud.showNotification('Level 1: Abandoned Hospital (Active)');
+        this.hud.showNotification('Level 1: St. Jude Asylum (Active)');
       },
       onSettings: () => this.settingsMenu.show(),
       onAbout: () => this.aboutScreen.show(),
@@ -130,8 +132,11 @@ export class Game {
 
     // Death Screen buttons
     const deathRestartBtn = document.getElementById('btn-death-restart');
+    const deathCheckpointBtn = document.getElementById('btn-death-checkpoint');
     const deathMenuBtn = document.getElementById('btn-death-menu');
-    if (deathRestartBtn) deathRestartBtn.addEventListener('click', () => this.restartGame());
+
+    if (deathRestartBtn) deathRestartBtn.addEventListener('click', () => this.restartGame(false));
+    if (deathCheckpointBtn) deathCheckpointBtn.addEventListener('click', () => this.restartGame(true));
     if (deathMenuBtn) deathMenuBtn.addEventListener('click', () => this.returnToMainMenu());
 
     // Victory Screen buttons
@@ -139,6 +144,15 @@ export class Game {
     const victoryMenuBtn = document.getElementById('btn-victory-menu');
     if (victoryContinueBtn) victoryContinueBtn.addEventListener('click', () => this.returnToMainMenu());
     if (victoryMenuBtn) victoryMenuBtn.addEventListener('click', () => this.returnToMainMenu());
+
+    // Note Modal Close
+    const closeNoteBtn = document.getElementById('btn-close-note');
+    if (closeNoteBtn) {
+      closeNoteBtn.addEventListener('click', () => {
+        const noteModal = document.getElementById('note-modal');
+        if (noteModal) noteModal.style.display = 'none';
+      });
+    }
   }
 
   setupGameWorld() {
@@ -152,7 +166,6 @@ export class Game {
       sensitivity: this.settings.touchSensitivity
     });
 
-    // Enemy: The Surgeon
     this.enemy = new Enemy(this.scene, ENEMY_REGISTRY.SURGEON);
     this.enemy.mesh.position.set(0, 0, -6);
     this.enemy.ai.setWaypoints([
@@ -166,7 +179,6 @@ export class Game {
   }
 
   setupEventListeners() {
-    // Flashlight on-screen button
     const flashBtn = document.getElementById('btn-action-flashlight');
     if (flashBtn) {
       flashBtn.addEventListener('click', (e) => {
@@ -175,7 +187,6 @@ export class Game {
       });
     }
 
-    // Sprint button (touch hold / toggle)
     const sprintBtn = document.getElementById('btn-action-sprint');
     if (sprintBtn) {
       sprintBtn.addEventListener('touchstart', (e) => {
@@ -188,7 +199,6 @@ export class Game {
       });
     }
 
-    // Crouch button
     const crouchBtn = document.getElementById('btn-action-crouch');
     if (crouchBtn) {
       crouchBtn.addEventListener('click', (e) => {
@@ -197,7 +207,6 @@ export class Game {
       });
     }
 
-    // Interact button
     const interactBtn = document.getElementById('btn-action-interact');
     if (interactBtn) {
       interactBtn.addEventListener('click', (e) => {
@@ -206,7 +215,6 @@ export class Game {
       });
     }
 
-    // Pause on-screen button
     const pauseBtn = document.getElementById('btn-action-pause');
     if (pauseBtn) {
       pauseBtn.addEventListener('click', (e) => {
@@ -216,14 +224,27 @@ export class Game {
     }
   }
 
+  showNoteModal(title, text) {
+    const modal = document.getElementById('note-modal');
+    const titleEl = document.getElementById('note-modal-title');
+    const bodyEl = document.getElementById('note-modal-body');
+    if (modal && titleEl && bodyEl) {
+      titleEl.innerText = title;
+      bodyEl.innerText = text;
+      modal.style.display = 'flex';
+      if (this.audio) this.audio.playPickupSound();
+    }
+  }
+
   startGame() {
     this.audio.init();
     this.audio.resume();
     this.state = 'PLAYING';
     this.gameStartTime = Date.now();
+    this.timesSpotted = 0;
     this.mainMenu.hide();
     document.getElementById('hud-screen').style.display = 'block';
-    this.hud.showNotification('Find the Generator Key to restore power.');
+    this.hud.showNotification('Investigate the hospital. Search for the Generator Key.');
   }
 
   pauseGame() {
@@ -238,26 +259,48 @@ export class Game {
     this.pauseMenu.hide();
   }
 
-  restartGame() {
+  restartGame(fromCheckpoint = false) {
     document.getElementById('death-screen').style.display = 'none';
     document.getElementById('victory-screen').style.display = 'none';
     this.pauseMenu.hide();
 
-    this.player.reset(0, 9);
-    this.inventory.reset();
-    this.objectives.reset();
+    let spawnX = 0;
+    let spawnZ = 9;
 
-    // Rebuild hospital state
-    this.world.buildLevel1();
+    if (fromCheckpoint) {
+      if (this.world.environment.checkpoints.hasPower) {
+        // Respawn near Substation with power active
+        spawnX = 7.0;
+        spawnZ = -10.0;
+        this.inventory.addItem('generator_key');
+        this.objectives.advanceTo(4);
+      } else if (this.world.environment.checkpoints.hasKey) {
+        // Respawn near Doctor's Office with key in hand
+        spawnX = -7.0;
+        spawnZ = -3.0;
+        this.inventory.addItem('generator_key');
+        this.objectives.advanceTo(2);
+      } else {
+        this.inventory.reset();
+        this.objectives.reset();
+        this.world.buildLevel1();
+      }
+    } else {
+      this.inventory.reset();
+      this.objectives.reset();
+      this.world.buildLevel1();
+    }
 
-    // Reset enemy
+    this.player.reset(spawnX, spawnZ);
+
+    // Reset enemy to patrol corridor
     this.enemy.mesh.position.set(0, 0, -6);
     this.enemy.ai.state = 'PATROL';
     this.enemy.setChasing(false);
 
     this.state = 'PLAYING';
     this.gameStartTime = Date.now();
-    this.hud.showNotification('Nightmare reset. Stay silent.');
+    this.hud.showNotification(fromCheckpoint ? 'Resumed from Checkpoint!' : 'Nightmare reset. Stay silent.');
   }
 
   returnToMainMenu() {
@@ -271,6 +314,11 @@ export class Game {
 
   triggerInteraction() {
     if (this.state !== 'PLAYING') return;
+    if (this.player.isHiding) {
+      this.player.exitHiding();
+      this.hud.showNotification('You exited the locker.');
+      return;
+    }
     this.interaction.triggerInteract(this);
   }
 
@@ -285,9 +333,27 @@ export class Game {
     this.elapsedTime = Math.round((Date.now() - this.gameStartTime) / 1000);
     if (this.audio) this.audio.playVictoryFanfare();
 
+    let rating = 'S';
+    let ratingTitle = 'GHOST SURVIVOR';
+    if (this.timesSpotted >= 4) {
+      rating = 'C';
+      ratingTitle = 'BATTERED ESCAPEE';
+    } else if (this.timesSpotted >= 2) {
+      rating = 'B';
+      ratingTitle = 'ALERT RUNNER';
+    } else if (this.timesSpotted >= 1) {
+      rating = 'A';
+      ratingTitle = 'SHADOW SURVIVOR';
+    }
+
     const statsEl = document.getElementById('victory-stats');
     if (statsEl) {
-      statsEl.innerText = `Escape Time: ${this.elapsedTime} seconds | Health Remaining: ${Math.round(this.player.health)}%`;
+      statsEl.innerHTML = `
+        <div style="font-size: 1.2rem; color: #ffd700; margin-bottom: 6px;">Stealth Grade: ${rating} (${ratingTitle})</div>
+        <div>Escape Time: <strong>${this.elapsedTime} seconds</strong></div>
+        <div>Health Remaining: <strong>${Math.round(this.player.health)}%</strong></div>
+        <div>Times Detected: <strong>${this.timesSpotted}</strong></div>
+      `;
     }
 
     const vicScreen = document.getElementById('victory-screen');
@@ -296,7 +362,6 @@ export class Game {
 
   onPlayerDied() {
     this.state = 'DEAD';
-    // Native vibration if available on Android
     if (this.settings.vibrationEnabled) {
       if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === 'function') {
         window.AndroidBridge.vibrate(600);
@@ -304,6 +369,14 @@ export class Game {
         window.navigator.vibrate([300, 100, 400]);
       }
     }
+
+    // Enable/disable checkpoint button on death screen
+    const chkBtn = document.getElementById('btn-death-checkpoint');
+    const hasCheckpoint = this.world.environment.checkpoints.hasKey || this.world.environment.checkpoints.hasPower;
+    if (chkBtn) {
+      chkBtn.style.display = hasCheckpoint ? 'block' : 'none';
+    }
+
     const deathScreen = document.getElementById('death-screen');
     if (deathScreen) deathScreen.style.display = 'flex';
   }
@@ -339,7 +412,6 @@ export class Game {
     if (this.state === 'PLAYING') {
       this.controls.update();
 
-      // Check keyboard interact/flash toggles
       if (this.controls.interactPressed) {
         this.controls.interactPressed = false;
         this.triggerInteraction();
@@ -366,6 +438,12 @@ export class Game {
       if (this.enemy) {
         const aiStatus = this.enemy.update(delta, this.player, this.collision, this.audio);
         distToEnemy = aiStatus.distToPlayer;
+
+        // Track spotted times for stealth rating
+        if (aiStatus.isChasing && !this.lastSpottedState) {
+          this.timesSpotted += 1;
+        }
+        this.lastSpottedState = aiStatus.isChasing;
       }
 
       // Update Soundscape tension & heartbeat
