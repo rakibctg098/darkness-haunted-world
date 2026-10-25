@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d11">
+  <meta name="description" content="DARKNESS: THE HAUNTED WORLD - 3D First-Person Horror Survival Game">
+  <title>DARKNESS: THE HAUNTED WORLD</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #06070a;
+      color: #e0e0e0;
+      touch-action: none;
+    }
+
+    #game-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Danger red pulse vignette */
+    #danger-vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      box-shadow: inset 0 0 90px rgba(255, 0, 30, 0.85);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Flash jumpscare overlay */
+    #scare-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 100;
+      background: rgba(180, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+      pointer-events: none;
+    }
+
+    #scare-message {
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px #000;
+    }
+
+    /* HUD overlay */
+    #hud-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: none;
+    }
+
+    .hud-top-bar {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .hud-bars-box {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: rgba(10, 12, 16, 0.65);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(4px);
+    }
+
+    .hud-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .hud-bar-track {
+      width: 110px;
+      height: 8px;
+      background: #1a1e24;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+
+    .hud-bar-fill {
+      height: 100%;
+      transition: width 0.15s ease;
+    }
+
+    #hud-health-fill { background: #e62234; width: 100%; }
+    #hud-stamina-fill { background: #22c55e; width: 100%; }
+    #hud-battery-fill { background: #eab308; width: 100%; }
+
+    /* Objective Box */
+    .hud-objective-card {
+      background: rgba(12, 14, 18, 0.8);
+      border-left: 3px solid #ff3344;
+      padding: 8px 14px;
+      border-radius: 4px;
+      max-width: 320px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 60, 60, 0.25);
+    }
+
+    .hud-objective-title {
+      font-size: 0.8rem;
+      color: #ff4d5a;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+    }
+
+    .hud-objective-desc {
+      font-size: 0.72rem;
+      color: #bbb;
+      margin-top: 3px;
+      line-height: 1.25;
+    }
+
+    /* Crosshair & Interaction */
+    #hud-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    #hud-interact-prompt {
+      position: absolute;
+      top: 56%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: #ffd700;
+      border: 1px solid #ffd700;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      display: none;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+      pointer-events: auto;
+    }
+
+    #hud-notification {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 24, 30, 0.9);
+      border: 1px solid #556;
+      color: #fff;
+      padding: 9px 20px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      display: none;
+      transition: opacity 0.4s ease;
+      text-align: center;
+      max-width: 90%;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Touch Controls Overlay */
+    .touch-action-btn {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(20, 24, 32, 0.7);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      pointer-events: auto;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .touch-action-btn:active {
+      background: rgba(255, 60, 60, 0.8);
+      transform: scale(0.94);
+    }
+
+    #btn-action-flashlight { bottom: 24px; right: 28px; border-color: #ffd700; }
+    #btn-action-sprint     { bottom: 94px; right: 28px; border-color: #22c55e; }
+    #btn-action-interact   { bottom: 164px; right: 28px; border-color: #00bcd4; width: 56px; height: 56px; }
+    #btn-action-crouch     { bottom: 24px; right: 98px; }
+    #btn-action-pause      { top: 14px; right: 16px; width: 44px; height: 44px; font-size: 0.9rem; }
+
+    /* Virtual Joystick */
+    #joystick-base {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      display: none;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    #joystick-knob {
+      position: absolute;
+      top: 25px;
+      left: 25px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 60, 60, 0.75);
+      box-shadow: 0 0 10px rgba(255, 60, 60, 0.5);
+    }
+
+    /* Modal Screens: Menu, Pause, Settings, About, Credits, Death, Victory */
+    .game-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      background: radial-gradient(circle at center, #13171e 0%, #07090d 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .screen-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: #ff2233;
+      text-shadow: 0 0 16px rgba(255, 34, 51, 0.6);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .screen-subtitle {
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      color: #8892a0;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+
+    .menu-button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .game-btn {
+      background: linear-gradient(180deg, #1f2530 0%, #12151c 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 13px 20px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .game-btn:active {
+      transform: scale(0.97);
+      background: #ff2233;
+      border-color: #ff2233;
+    }
+
+    .game-btn-primary {
+      background: linear-gradient(180deg, #c41828 0%, #870e1a 100%);
+      border-color: #ff3b4e;
+    }
+
+    /* Mandatory Developer Credit Box */
+    .developer-credit-box {
+      margin-top: 26px;
+      padding: 12px 18px;
+      background: rgba(15, 18, 24, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .dev-author {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    .dev-channel {
+      font-size: 0.82rem;
+      color: #9ab;
+    }
+
+    .dev-channel a {
+      color: #38bdf8;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    /* Settings Box */
+    .settings-panel {
+      background: rgba(18, 22, 28, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 20px;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+    }
+
+    .setting-item input[type="range"] {
+      width: 140px;
+    }
+
+    .setting-item select {
+      background: #0d1015;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 5px 8px;
+      border-radius: 4px;
+    }
+
+    /* PWA Banner */
+    #pwa-install-banner {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #11151c;
+      border: 1px solid #38bdf8;
+      border-radius: 20px;
+      padding: 6px 16px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      font-size: 0.78rem;
+    }
+
+    #pwa-online-status {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      z-index: 1000;
+    }
+
+    .status-online { color: #22c55e; }
+    .status-offline { color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+  <!-- Three.js 3D WebGL Canvas Container -->
+  <div id="game-container"></div>
+
+  <!-- Horror Ambience & Danger Effects -->
+  <div id="danger-vignette"></div>
+
+  <div id="scare-overlay">
+    <div id="scare-message">HE FOUND YOU</div>
+  </div>
+
+  <!-- PWA Status & Banner -->
+  <div id="pwa-install-banner">
+    <span>Install DARKNESS for smooth offline horror gaming</span>
+    <button id="btn-pwa-install" class="game-btn" style="padding: 4px 10px; font-size: 0.72rem;">Install PWA</button>
+  </div>
+  <div id="pwa-online-status" class="status-online">READY</div>
+
+  <!-- Dynamic Touch Joystick Elements -->
+  <div id="joystick-base">
+    <div id="joystick-knob"></div>
+  </div>
+
+  <!-- Gameplay HUD Screen -->
+  <div id="hud-screen">
+    <div class="hud-top-bar">
+      <!-- Player Stats -->
+      <div class="hud-bars-box">
+        <div class="hud-bar-row">
+          <span>HP</span>
+          <div class="hud-bar-track"><div id="hud-health-fill" class="hud-bar-fill"></div></div>
+        </div>
+        <div class="hud-bar-row">
+          <span>STA</span>
+          <div class="hud-bar-track"><div id="hud-stamina-fill" class="hud-bar-fill"></div></div>
+        </div>
+        <div class="hud-bar-row">
+          <span>BAT</span>
+          <div class="hud-bar-track"><div id="hud-battery-fill" class="hud-bar-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- Current Objective -->
+      <div class="hud-objective-card">
+        <div id="hud-obj-title" class="hud-objective-title">RESTORE EMERGENCY POWER</div>
+        <div id="hud-obj-desc" class="hud-objective-desc">Find the Generator Key inside the Doctor's Office.</div>
+      </div>
+    </div>
+
+    <!-- Center Crosshair & Interaction Prompt -->
+    <div id="hud-crosshair"></div>
+    <div id="hud-interact-prompt" class="ui-interactive">TAKE KEY [TAP]</div>
+    <div id="hud-notification"></div>
+
+    <!-- Mobile Action Buttons -->
+    <div id="btn-action-pause" class="touch-action-btn ui-interactive">||</div>
+    <div id="btn-action-interact" class="touch-action-btn ui-interactive">ACT</div>
+    <div id="btn-action-sprint" class="touch-action-btn ui-interactive">RUN</div>
+    <div id="btn-action-flashlight" class="touch-action-btn ui-interactive">LGT</div>
+    <div id="btn-action-crouch" class="touch-action-btn ui-interactive">CRH</div>
+  </div>
+
+  <!-- MAIN MENU SCREEN -->
+  <div id="main-menu-screen" class="game-screen ui-interactive">
+    <h1 class="screen-title">DARKNESS</h1>
+    <h2 class="screen-subtitle">THE HAUNTED WORLD</h2>
+
+    <div class="menu-button-group">
+      <button id="btn-start-game" class="game-btn game-btn-primary">START SURVIVAL</button>
+      <button id="btn-level-select" class="game-btn">LEVEL: HOSPITAL</button>
+      <button id="btn-menu-settings" class="game-btn">SETTINGS</button>
+      <button id="btn-menu-about" class="game-btn">ABOUT</button>
+      <button id="btn-menu-credits" class="game-btn">CREDITS</button>
+    </div>
+
+    <div id="main-menu-footer"></div>
+  </div>
+
+  <!-- PAUSE MENU SCREEN -->
+  <div id="pause-menu-screen" class="game-screen ui-interactive" style="display: none;">
+    <h1 class="screen-title" style="font-size: 1.8rem;">GAME PAUSED</h1>
+    <div class="menu-button-group">
+      <button id="btn-pause-resume" class="game-btn game-btn-primary">RESUME</button>
+      <button id="btn-pause-restart" class="game-btn">RESTART LEVEL</button>
+      <button id="btn-pause-settings" class="game-btn">SETTINGS</button>
+      <button id="btn-pause-mainmenu" class="game-btn">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div id="settings-screen" class="game-screen ui-interactive" style="display: none;">
+    <h2 class="screen-title" style="font-size: 1.6rem;">SETTINGS</h2>
+    <div class="settings-panel">
+      <div class="setting-item">
+        <span>Graphics Quality</span>
+        <select id="setting-graphics">
+          <option value="LOW">Low (Smooth 60 FPS)</option>
+          <option value="MEDIUM" selected>Medium (Recommended)</option>
+          <option value="HIGH">High (Full Resolution)</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <span>Master Volume</span>
+        <input type="range" id="setting-master-vol" min="0" max="100" value="85">
+      </div>
+      <div class="setting-item">
+        <span>Sound Effects (SFX)</span>
+        <input type="range" id="setting-sfx-vol" min="0" max="100" value="90">
+      </div>
+      <div class="setting-item">
+        <span>Touch Look Sensitivity</span>
+        <input type="range" id="setting-sensitivity" min="0.5" max="2.5" step="0.1" value="1.2">
+      </div>
+      <div class="setting-item">
+        <span>Vibration Feedback</span>
+        <input type="checkbox" id="setting-vibration" checked>
+      </div>
+      <div class="setting-item">
+        <span>Reduced Flashing Mode</span>
+        <input type="checkbox" id="setting-reduced-flash">
+      </div>
+
+      <!-- Mandatory Developer Credit Section in Settings -->
+      <div class="developer-credit-box" style="margin-top: 10px;">
+        <p class="dev-author">Made by Mohammad Rakib</p>
+        <p class="dev-channel">Telegram channel: <a href="https://t.me/appdevbyrakib" target="_blank" rel="noopener noreferrer">https://t.me/appdevbyrakib</a></p>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="btn-reset-settings" class="game-btn" style="flex: 1; font-size: 0.75rem;">Reset</button>
+        <button id="btn-close-settings" class="game-btn game-btn-primary" style="flex: 1; font-size: 0.75rem;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT SCREEN -->
+  <div id="about-screen" class="game-screen ui-interactive" style="display: none;">
+    <h2 class="screen-title" style="font-size: 1.6rem;">ABOUT</h2>
+    <div class="settings-panel">
+      <p style="font-size: 0.88rem; line-height: 1.5; color: #ccc;">
+        <strong>DARKNESS: THE HAUNTED WORLD</strong> is an atmospheric 3D first-person horror survival experience.
+        You awaken inside the locked corridors of St. Jude Psychiatric Hospital. 
+        Evade The Surgeon, locate the Generator Room Key, restore emergency electrical power, and escape through the security blast gate before your battery dies.
+      </p>
+      <p style="font-size: 0.84rem; color: #aaa; margin-top: 8px;">
+        Controls: Left screen touch moves your character with the virtual joystick. Right screen drag rotates your camera look. Use the action buttons to toggle your flashlight, sprint, crouch, and interact.
+      </p>
+      <div class="developer-credit-box">
+        <p class="dev-author">Made by Mohammad Rakib</p>
+        <p class="dev-channel">Telegram channel: <a href="https://t.me/appdevbyrakib" target="_blank" rel="noopener noreferrer">https://t.me/appdevbyrakib</a></p>
+      </div>
+      <button id="btn-close-about" class="game-btn game-btn-primary" style="margin-top: 10px;">Back</button>
+    </div>
+  </div>
+
+  <!-- CREDITS SCREEN -->
+  <div id="credits-screen" class="game-screen ui-interactive" style="display: none;">
+    <h2 class="screen-title" style="font-size: 1.6rem;">GAME CREDITS</h2>
+    <div class="settings-panel" style="text-align: center;">
+      <p style="font-size: 1.1rem; font-weight: 700; color: #ff3344; margin-bottom: 6px;">DARKNESS: THE HAUNTED WORLD</p>
+      <p style="font-size: 0.82rem; color: #8892a0; margin-bottom: 16px;">Professional 3D Horror Survival Engine</p>
+      
+      <div class="developer-credit-box">
+        <p class="dev-author">Made by Mohammad Rakib</p>
+        <p class="dev-channel">Telegram channel: <a href="https://t.me/appdevbyrakib" target="_blank" rel="noopener noreferrer">https://t.me/appdevbyrakib</a></p>
+      </div>
+
+      <div style="font-size: 0.78rem; color: #778; margin-top: 14px; line-height: 1.4;">
+        3D Engine: Three.js WebGL<br>
+        Audio Engine: Real-Time Procedural Web Audio API<br>
+        Architecture: Clean Modular ES Modules & PWA
+      </div>
+
+      <button id="btn-close-credits" class="game-btn game-btn-primary" style="margin-top: 16px;">Back</button>
+    </div>
+  </div>
+
+  <!-- DEATH SCREEN -->
+  <div id="death-screen" class="game-screen ui-interactive" style="display: none; background: rgba(20, 2, 4, 0.95);">
+    <h1 class="screen-title" style="color: #ff1122; font-size: 2.4rem;">YOU DIED</h1>
+    <h2 class="screen-subtitle" style="color: #bbb;">THE SURGEON CLAIMED ANOTHER SOUL</h2>
+    <div class="menu-button-group">
+      <button id="btn-death-restart" class="game-btn game-btn-primary">TRY AGAIN</button>
+      <button id="btn-death-menu" class="game-btn">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- VICTORY SCREEN -->
+  <div id="victory-screen" class="game-screen ui-interactive" style="display: none; background: rgba(5, 20, 10, 0.95);">
+    <h1 class="screen-title" style="color: #22c55e; font-size: 2.2rem;">YOU ESCAPED</h1>
+    <h2 class="screen-subtitle" style="color: #88ccaa;">LEVEL 1: ABANDONED HOSPITAL COMPLETED</h2>
+    <p id="victory-stats" style="font-size: 0.88rem; color: #cde; margin-bottom: 20px; text-align: center;"></p>
+    <div class="menu-button-group">
+      <button id="btn-victory-continue" class="game-btn game-btn-primary">CONTINUE</button>
+      <button id="btn-victory-menu" class="game-btn">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- Local Offline Three.js Script -->
+  <script src="./assets/libs/three.min.js"></script>
+  <!-- Main Application ES Module -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

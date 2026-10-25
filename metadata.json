@@ -1,0 +1,6 @@
+{
+  "name": "Darkness: Haunted World",
+  "description": "3D Horror Survival Game: explore the abandoned hospital, uncover secrets, manage flashlight battery, and evade supernatural entities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
