@@ -1,6 +1,9 @@
 /**
  * DARKNESS: THE HAUNTED WORLD
- * Atmospheric Lighting & Fluorescent Flickering Engine
+ * Atmospheric Lighting Engine with Dynamic Brightness Modes:
+ * - NORMAL: 'হালকা ডার্ক' (Clear Visibility + Eerie Horror Ambience - Recommended Default)
+ * - BRIGHT: 'উজ্জ্বল দৃষ্টি' (High Visibility)
+ * - DARK: 'গাঢ় অন্ধকার' (Original Pitch Black)
  */
 
 export class Lighting {
@@ -9,20 +12,92 @@ export class Lighting {
     this.flickerLights = [];
     this.emergencyLights = [];
     this.isEmergencyActive = false;
+    
+    this.ambientLight = null;
+    this.moonDirectional = null;
+
+    // Load saved brightness preset or default to NORMAL ('হালকা ডার্ক')
+    const saved = localStorage.getItem('dhw_brightness');
+    this.currentPreset = saved === 'BRIGHT' || saved === 'DARK' ? saved : 'NORMAL';
+
     this.setupBaseLighting();
   }
 
   setupBaseLighting() {
-    // 1. Very faint ambient moonlight (deep desaturated dark blue)
-    const ambient = new THREE.AmbientLight(0x0c1018, 0.45);
-    this.scene.add(ambient);
+    // 1. Ambient Moonlight Base
+    this.ambientLight = new THREE.AmbientLight(0x526075, 1.15);
+    this.scene.add(this.ambientLight);
 
-    // 2. Scene Fog (dark claustrophobic horror fog)
-    this.scene.fog = new THREE.FogExp2(0x06070a, 0.048);
+    // 2. Global Directional Moon Fill
+    this.moonDirectional = new THREE.DirectionalLight(0x607898, 0.75);
+    this.moonDirectional.position.set(10, 25, 10);
+    this.scene.add(this.moonDirectional);
+
+    // 3. Fog
+    this.scene.fog = new THREE.FogExp2(0x151b24, 0.016);
+
+    // Apply the configured preset
+    this.applyBrightnessPreset(this.currentPreset);
   }
 
-  addFlickeringCorridorLight(x, y, z, color = 0xdde5ff, intensity = 1.1) {
-    const light = new THREE.PointLight(color, intensity, 12, 1.8);
+  setBrightnessPreset(preset) {
+    if (preset !== 'NORMAL' && preset !== 'BRIGHT' && preset !== 'DARK') {
+      preset = 'NORMAL';
+    }
+    this.currentPreset = preset;
+    localStorage.setItem('dhw_brightness', preset);
+    this.applyBrightnessPreset(preset);
+  }
+
+  cycleBrightnessPreset() {
+    if (this.currentPreset === 'NORMAL') {
+      this.setBrightnessPreset('BRIGHT');
+    } else if (this.currentPreset === 'BRIGHT') {
+      this.setBrightnessPreset('DARK');
+    } else {
+      this.setBrightnessPreset('NORMAL');
+    }
+    return this.currentPreset;
+  }
+
+  applyBrightnessPreset(preset) {
+    if (!this.ambientLight || !this.scene.fog) return;
+
+    if (preset === 'BRIGHT') {
+      // High visibility mode (উজ্জ্বল দৃষ্টি)
+      this.ambientLight.color.setHex(0x788aa0);
+      this.ambientLight.intensity = 1.6;
+      if (this.moonDirectional) {
+        this.moonDirectional.color.setHex(0x8095b0);
+        this.moonDirectional.intensity = 1.1;
+      }
+      this.scene.fog.color.setHex(0x202835);
+      this.scene.fog.density = 0.008;
+    } else if (preset === 'DARK') {
+      // Original hardcore dark (গাঢ় অন্ধকার)
+      this.ambientLight.color.setHex(0x1e2430);
+      this.ambientLight.intensity = 0.55;
+      if (this.moonDirectional) {
+        this.moonDirectional.color.setHex(0x283545);
+        this.moonDirectional.intensity = 0.35;
+      }
+      this.scene.fog.color.setHex(0x090b10);
+      this.scene.fog.density = 0.038;
+    } else {
+      // NORMAL: 'হালকা ডার্ক' (Comfortable, crisp visibility with horror mood)
+      this.ambientLight.color.setHex(0x526075);
+      this.ambientLight.intensity = 1.15;
+      if (this.moonDirectional) {
+        this.moonDirectional.color.setHex(0x607898);
+        this.moonDirectional.intensity = 0.75;
+      }
+      this.scene.fog.color.setHex(0x151b24);
+      this.scene.fog.density = 0.016;
+    }
+  }
+
+  addFlickeringCorridorLight(x, y, z, color = 0xdde5ff, intensity = 1.3) {
+    const light = new THREE.PointLight(color, intensity, 14, 1.8);
     light.position.set(x, y, z);
     this.scene.add(light);
 
@@ -52,22 +127,21 @@ export class Lighting {
   }
 
   addEmergencyBeacon(x, y, z) {
-    const light = new THREE.PointLight(0xff1111, 0, 15, 1.5);
+    const light = new THREE.PointLight(0xff1111, 0, 16, 1.5);
     light.position.set(x, y, z);
     this.scene.add(light);
 
     this.emergencyLights.push({
       light,
-      baseIntensity: 2.2,
+      baseIntensity: 2.5,
       phase: Math.random() * Math.PI * 2
     });
   }
 
   activateEmergencyMode() {
     this.isEmergencyActive = true;
-    // Dim normal flicker lights and turn on eerie red sirens
     this.flickerLights.forEach(item => {
-      item.baseIntensity = 0.3;
+      item.baseIntensity = 0.45;
     });
   }
 
@@ -77,18 +151,18 @@ export class Lighting {
       const item = this.flickerLights[i];
       item.timer -= delta;
       if (item.timer <= 0) {
-        if (Math.random() < 0.25) {
+        if (Math.random() < 0.2) {
           // Rapid buzz/flicker
           item.isOff = !item.isOff;
-          item.light.intensity = item.isOff ? 0.05 : item.baseIntensity * (0.6 + Math.random() * 0.6);
+          item.light.intensity = item.isOff ? 0.15 : item.baseIntensity * (0.7 + Math.random() * 0.5);
           item.bulbMat.color.setHex(item.isOff ? 0x222222 : item.baseColor);
-          item.timer = 0.05 + Math.random() * 0.12;
+          item.timer = 0.06 + Math.random() * 0.12;
         } else {
-          // Steady on for a while
+          // Steady on
           item.isOff = false;
           item.light.intensity = item.baseIntensity;
           item.bulbMat.color.setHex(item.baseColor);
-          item.timer = 1.0 + Math.random() * 3.5;
+          item.timer = 1.2 + Math.random() * 3.5;
         }
       }
     }

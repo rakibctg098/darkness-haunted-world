@@ -514,23 +514,29 @@
       <!-- Player Stats -->
       <div class="hud-bars-box">
         <div class="hud-bar-row">
-          <span>HP</span>
+          <span id="hud-label-hp">জীবন</span>
           <div class="hud-bar-track"><div id="hud-health-fill" class="hud-bar-fill"></div></div>
         </div>
         <div class="hud-bar-row">
-          <span>STA</span>
+          <span id="hud-label-sta">শক্তি</span>
           <div class="hud-bar-track"><div id="hud-stamina-fill" class="hud-bar-fill"></div></div>
         </div>
         <div class="hud-bar-row">
-          <span>BAT</span>
+          <span id="hud-label-bat">ব্যাটারি</span>
           <div class="hud-bar-track"><div id="hud-battery-fill" class="hud-bar-fill"></div></div>
         </div>
       </div>
 
+      <!-- Quick Toggles: Brightness & Language -->
+      <div style="display: flex; gap: 8px; align-items: center; pointer-events: auto;">
+        <button id="btn-hud-brightness-toggle" class="game-btn" style="padding: 5px 11px; font-size: 0.72rem; border-radius: 16px; background: rgba(18,22,30,0.9); border: 1px solid #f59e0b; color: #fde68a;">💡 হালকা ডার্ক</button>
+        <button id="btn-hud-lang-toggle" class="game-btn" style="padding: 5px 11px; font-size: 0.72rem; border-radius: 16px; background: rgba(18,22,30,0.9); border: 1px solid #38bdf8; color: #a5f3fc;">🌐 বাংলা</button>
+      </div>
+
       <!-- Current Objective -->
       <div class="hud-objective-card">
-        <div id="hud-obj-title" class="hud-objective-title">RESTORE EMERGENCY POWER</div>
-        <div id="hud-obj-desc" class="hud-objective-desc">Find the Generator Key inside the Doctor's Office.</div>
+        <div id="hud-obj-title" class="hud-objective-title">জরুরি বিদ্যুৎ পুনরুদ্ধার</div>
+        <div id="hud-obj-desc" class="hud-objective-desc">ডাক্তারের চেম্বার থেকে জেনারেটরের চাবিটি খুঁজে বের করুন।</div>
       </div>
     </div>
 
@@ -549,16 +555,21 @@
 
   <!-- MAIN MENU SCREEN -->
   <div id="main-menu-screen" class="game-screen ui-interactive">
+    <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px;">
+      <button id="btn-menu-lang-toggle" class="game-btn" style="padding: 6px 14px; font-size: 0.8rem; border-color: #38bdf8; color: #a5f3fc; border-radius: 20px;">🌐 বাংলা (EN)</button>
+    </div>
+
     <h1 class="screen-title">DARKNESS</h1>
-    <h2 class="screen-subtitle">THE HAUNTED WORLD</h2>
+    <h2 id="main-menu-subtitle" class="screen-subtitle">THE HAUNTED WORLD</h2>
 
     <div class="menu-button-group">
-      <button id="btn-start-game" class="game-btn game-btn-primary">START SURVIVAL</button>
-      <button id="btn-menu-story-creator" class="game-btn" style="border-color: #ff3344; color: #ff8899;">STORY CREATOR</button>
-      <button id="btn-menu-char-customizer" class="game-btn" style="border-color: #38bdf8; color: #a5f3fc;">CHARACTER & MODS</button>
-      <button id="btn-menu-settings" class="game-btn">SETTINGS</button>
-      <button id="btn-menu-about" class="game-btn">ABOUT</button>
-      <button id="btn-menu-credits" class="game-btn">CREDITS</button>
+      <button id="btn-start-game" class="game-btn game-btn-primary">খেলা শুরু করুন</button>
+      <button id="btn-menu-brightness-toggle" class="game-btn" style="border-color: #f59e0b; color: #fde68a;">💡 হালকা ডার্ক (স্বাভাবিক)</button>
+      <button id="btn-menu-story-creator" class="game-btn" style="border-color: #ff3344; color: #ff8899;">ভয়ংকর গল্প মেকার</button>
+      <button id="btn-menu-char-customizer" class="game-btn" style="border-color: #38bdf8; color: #a5f3fc;">চরিত্র ও লাইটিং মোড</button>
+      <button id="btn-menu-settings" class="game-btn">সেটিংস</button>
+      <button id="btn-menu-about" class="game-btn">গেম পরিচিতি</button>
+      <button id="btn-menu-credits" class="game-btn">ক্রেডিট</button>
     </div>
 
     <div id="main-menu-footer"></div>
@@ -566,21 +577,40 @@
 
   <!-- PAUSE MENU SCREEN -->
   <div id="pause-menu-screen" class="game-screen ui-interactive" style="display: none;">
-    <h1 class="screen-title" style="font-size: 1.8rem;">GAME PAUSED</h1>
+    <h1 id="pause-title-heading" class="screen-title" style="font-size: 1.8rem;">খেলা স্থগিত</h1>
     <div class="menu-button-group">
-      <button id="btn-pause-resume" class="game-btn game-btn-primary">RESUME</button>
-      <button id="btn-pause-restart" class="game-btn">RESTART LEVEL</button>
-      <button id="btn-pause-settings" class="game-btn">SETTINGS</button>
-      <button id="btn-pause-mainmenu" class="game-btn">MAIN MENU</button>
+      <button id="btn-pause-resume" class="game-btn game-btn-primary">চালিয়ে যান</button>
+      <button id="btn-pause-restart" class="game-btn">পুনরায় শুরু</button>
+      <button id="btn-pause-settings" class="game-btn">সেটিংস</button>
+      <button id="btn-pause-mainmenu" class="game-btn">প্রধান মেনু</button>
     </div>
   </div>
 
   <!-- SETTINGS SCREEN -->
   <div id="settings-screen" class="game-screen ui-interactive" style="display: none;">
-    <h2 class="screen-title" style="font-size: 1.6rem;">SETTINGS</h2>
+    <h2 id="settings-title-heading" class="screen-title" style="font-size: 1.6rem;">গেম সেটিংস</h2>
     <div class="settings-panel">
+      <!-- Language Selection -->
       <div class="setting-item">
-        <span>Graphics Quality</span>
+        <span id="label-setting-lang">ভাষা / Language</span>
+        <select id="setting-language">
+          <option value="bn" selected>বাংলা (Bengali)</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <!-- Brightness & Lighting Mode -->
+      <div class="setting-item">
+        <span id="label-setting-brightness">দৃশ্যমানতা / লাইটিং মোড</span>
+        <select id="setting-brightness">
+          <option value="NORMAL" id="opt-bright-normal" selected>হালকা ডার্ক (স্বাভাবিক ও স্পষ্ট - রেকমেন্ডেড)</option>
+          <option value="BRIGHT" id="opt-bright-high">উজ্জ্বল দৃষ্টি (সবকিছু পরিষ্কার দেখা যাবে)</option>
+          <option value="DARK" id="opt-bright-dark">গাঢ় হরর অন্ধকার (খুব বেশি ডার্ক)</option>
+        </select>
+      </div>
+
+      <div class="setting-item">
+        <span id="label-setting-graphics">গ্রাফিক্স কোয়ালিটি</span>
         <select id="setting-graphics">
           <option value="LOW">Low (Smooth 60 FPS)</option>
           <option value="MEDIUM" selected>Medium (Recommended)</option>
@@ -588,23 +618,23 @@
         </select>
       </div>
       <div class="setting-item">
-        <span>Master Volume</span>
+        <span id="label-setting-master-vol">মূল শব্দ ভলিউম</span>
         <input type="range" id="setting-master-vol" min="0" max="100" value="85">
       </div>
       <div class="setting-item">
-        <span>Sound Effects (SFX)</span>
+        <span id="label-setting-sfx-vol">হরর ইফেক্ট সাউন্ড</span>
         <input type="range" id="setting-sfx-vol" min="0" max="100" value="90">
       </div>
       <div class="setting-item">
-        <span>Touch Look Sensitivity</span>
+        <span id="label-setting-sensitivity">টাচ ঘোরানোর গতি</span>
         <input type="range" id="setting-sensitivity" min="0.5" max="2.5" step="0.1" value="1.2">
       </div>
       <div class="setting-item">
-        <span>Vibration Feedback</span>
+        <span id="label-setting-vibration">কম্পন (Vibration)</span>
         <input type="checkbox" id="setting-vibration" checked>
       </div>
       <div class="setting-item">
-        <span>Reduced Flashing Mode</span>
+        <span id="label-setting-reduced-flash">কম ফ্ল্যাশ মোড (চোখের সুরক্ষায়)</span>
         <input type="checkbox" id="setting-reduced-flash">
       </div>
 
@@ -615,29 +645,27 @@
       </div>
 
       <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button id="btn-reset-settings" class="game-btn" style="flex: 1; font-size: 0.75rem;">Reset</button>
-        <button id="btn-close-settings" class="game-btn game-btn-primary" style="flex: 1; font-size: 0.75rem;">Close</button>
+        <button id="btn-reset-settings" class="game-btn" style="flex: 1; font-size: 0.75rem;">রিসেট</button>
+        <button id="btn-close-settings" class="game-btn game-btn-primary" style="flex: 1; font-size: 0.75rem;">বন্ধ করুন</button>
       </div>
     </div>
   </div>
 
   <!-- ABOUT SCREEN -->
   <div id="about-screen" class="game-screen ui-interactive" style="display: none;">
-    <h2 class="screen-title" style="font-size: 1.6rem;">ABOUT</h2>
+    <h2 id="about-title-heading" class="screen-title" style="font-size: 1.6rem;">গেম পরিচিতি</h2>
     <div class="settings-panel">
-      <p style="font-size: 0.88rem; line-height: 1.5; color: #ccc;">
-        <strong>DARKNESS: THE HAUNTED WORLD</strong> is an atmospheric 3D first-person horror survival experience.
-        You awaken inside the locked corridors of St. Jude Psychiatric Hospital. 
-        Evade The Surgeon, locate the Generator Room Key, restore emergency electrical power, and escape through the security blast gate before your battery dies.
+      <p id="about-desc-text" style="font-size: 0.88rem; line-height: 1.5; color: #ccc;">
+        ডার্কনেস: দ্য হন্টেড ওয়ার্ল্ড একটি বাস্তবসম্মত ৩ডি ফার্স্ট-পার্সন হরর সার্ভাইভাল গেম। পরিত্যক্ত হাসপাতাল এবং অভিশপ্ত কবরস্থানে রহস্যময় দানব ও কবর থেকে ওঠা লাশের হাত থেকে রক্ষা পেয়ে পালিয়ে যান। আলো ও স্বাভাবিক ডার্কনেস আপনার সুবিধার মতো পরিবর্তন করে নিতে পারেন।
       </p>
-      <p style="font-size: 0.84rem; color: #aaa; margin-top: 8px;">
-        Controls: Left screen touch moves your character with the virtual joystick. Right screen drag rotates your camera look. Use the action buttons to toggle your flashlight, sprint, crouch, and interact.
+      <p id="about-ctrl-text" style="font-size: 0.84rem; color: #aaa; margin-top: 8px;">
+        কন্ট্রোল: স্ক্রিনের বাম পাশে আঙুল দিয়ে হাঁটুন (ভার্চুয়াল জয়স্টিক), ডান পাশে ড্র্যাগ করে চারিদিকে তাকান। টর্চ, দৌড়, নিচু হওয়া এবং যেকোনো জিনিস নেওয়ার বাটন স্ক্রিনের ডানে দেওয়া আছে।
       </p>
       <div class="developer-credit-box">
         <p class="dev-author">Made by Mohammad Rakib</p>
         <p class="dev-channel">Telegram channel: <a href="https://t.me/appdevbyrakib" target="_blank" rel="noopener noreferrer">https://t.me/appdevbyrakib</a></p>
       </div>
-      <button id="btn-close-about" class="game-btn game-btn-primary" style="margin-top: 10px;">Back</button>
+      <button id="btn-close-about" class="game-btn game-btn-primary" style="margin-top: 10px;">ফিরে যান</button>
     </div>
   </div>
 

@@ -45,10 +45,33 @@ export class GraveyardEnvironment {
   }
 
   setupAtmosphere() {
-    this.scene.fog = new THREE.FogExp2(this.materials.fogColor, 0.052);
-    const moon = new THREE.DirectionalLight(0x1a2b40, 0.5);
+    this.scene.fog = new THREE.FogExp2(0x151b26, 0.016);
+    const moon = new THREE.DirectionalLight(0x5f85b3, 1.2);
     moon.position.set(-15, 30, 10);
     this.scene.add(moon);
+
+    // Warm atmospheric lanterns for navigation and clear sight
+    this.addLantern(0, 1.8, 8, 0xffa544);
+    this.addLantern(-12, 1.8, -10, 0xff8833);
+    this.addLantern(0, 2.2, -19.5, 0xffaa55);
+  }
+
+  addLantern(x, y, z, color = 0xffa544) {
+    const light = new THREE.PointLight(color, 1.4, 18, 1.6);
+    light.position.set(x, y, z);
+    this.scene.add(light);
+
+    const postGeo = new THREE.CylinderGeometry(0.06, 0.08, y, 6);
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x1f2226, metalness: 0.8 });
+    const post = new THREE.Mesh(postGeo, postMat);
+    post.position.set(x, y / 2, z);
+    this.scene.add(post);
+
+    const lanternGeo = new THREE.BoxGeometry(0.25, 0.35, 0.25);
+    const lanternMat = new THREE.MeshBasicMaterial({ color: color });
+    const lantern = new THREE.Mesh(lanternGeo, lanternMat);
+    lantern.position.set(x, y, z);
+    this.scene.add(lantern);
   }
 
   buildTerrainAndPerimeter() {

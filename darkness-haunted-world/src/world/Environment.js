@@ -546,10 +546,16 @@ export class HospitalEnvironment {
   }
 
   setupLightingNodes() {
-    this.lighting.addFlickeringCorridorLight(0, 3.6, 8, 0xd8e6f5, 1.2);
-    this.lighting.addFlickeringCorridorLight(0, 3.6, 0, 0xd8e6f5, 1.0);
-    this.lighting.addFlickeringCorridorLight(0, 3.6, -10, 0xd8e6f5, 1.1);
-    this.lighting.addFlickeringCorridorLight(0, 3.6, -20, 0xd8e6f5, 1.2);
+    this.lighting.addFlickeringCorridorLight(0, 3.6, 8, 0xd8e6f5, 1.3);
+    this.lighting.addFlickeringCorridorLight(0, 3.6, 0, 0xd8e6f5, 1.2);
+    this.lighting.addFlickeringCorridorLight(0, 3.6, -10, 0xd8e6f5, 1.3);
+    this.lighting.addFlickeringCorridorLight(0, 3.6, -20, 0xd8e6f5, 1.3);
+
+    // Warm room lights so objects, keys, and notes are immediately visible
+    this.lighting.addFlickeringCorridorLight(-6.5, 3.4, -3, 0xffeacc, 1.2); // Doctor's Office
+    this.lighting.addFlickeringCorridorLight(6.5, 3.4, -3, 0xccd5ff, 1.1);  // Room 101
+    this.lighting.addFlickeringCorridorLight(-6.5, 3.4, -13, 0xccd5ff, 1.1); // Room 102 ICU
+    this.lighting.addFlickeringCorridorLight(6.5, 3.4, -13, 0xffd599, 1.3); // Generator Substation
 
     this.lighting.addEmergencyBeacon(0, 3.6, -24);
     this.lighting.addEmergencyBeacon(0, 3.6, 6);

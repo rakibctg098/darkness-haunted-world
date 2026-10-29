@@ -123,7 +123,8 @@ export class Game {
       onCharCustomizer: () => this.charCustomizer.show(),
       onSettings: () => this.settingsMenu.show(),
       onAbout: () => this.aboutScreen.show(),
-      onCredits: () => this.creditsScreen.show()
+      onCredits: () => this.creditsScreen.show(),
+      onCycleBrightness: () => this.cycleBrightness()
     });
 
     this.pauseMenu = new PauseMenu({
@@ -134,7 +135,8 @@ export class Game {
     });
 
     this.settingsMenu = new SettingsMenu({
-      onChange: (newSettings) => this.applySettings(newSettings)
+      onChange: (newSettings) => this.applySettings(newSettings),
+      onBrightnessChange: (preset) => this.setBrightnessPreset(preset)
     });
 
     this.storyCreator = new StoryCreator({
@@ -176,6 +178,7 @@ export class Game {
   setupGameWorld() {
     this.world = new World(this.scene, this.collision, this.interaction);
     this.world.buildHospitalLevel();
+    if (this.hud) this.hud.setLighting(this.world.lighting);
 
     this.player = new Player(this.camera, this.collision, this.audio);
     this.player.reset(0, 9); // Spawn in Reception
@@ -196,6 +199,32 @@ export class Game {
     ]);
   }
 
+  setBrightnessPreset(preset) {
+    if (this.world && this.world.lighting) {
+      this.world.lighting.setBrightnessPreset(preset);
+    }
+    if (this.hud) {
+      this.hud.updateBrightnessButtonLabel();
+    }
+    if (this.mainMenu) {
+      this.mainMenu.updateTexts();
+    }
+  }
+
+  cycleBrightness() {
+    let newPreset = 'NORMAL';
+    if (this.world && this.world.lighting) {
+      newPreset = this.world.lighting.cycleBrightnessPreset();
+    }
+    if (this.hud) {
+      this.hud.updateBrightnessButtonLabel();
+    }
+    if (this.mainMenu) {
+      this.mainMenu.updateTexts();
+    }
+    return newPreset;
+  }
+
   launchCustomStory(config) {
     this.activeStoryConfig = config;
     this.audio.init();
@@ -204,6 +233,7 @@ export class Game {
     // Build selected world
     if (config.location === 'GRAVEYARD') {
       this.world.buildGraveyardLevel();
+      if (this.hud) this.hud.setLighting(this.world.lighting);
       this.player.reset(0, 10); // Entrance path
       this.soundscape.setGraveyardMode(true);
 
@@ -218,17 +248,12 @@ export class Game {
         new THREE.Vector3(0, 0, 2)
       ]);
 
-      // Graveyard Objectives
-      this.objectives.steps = {
-        1: { title: "Explore Cursed Ground", desc: "Inspect the fresh open grave in the central clearing." },
-        2: { title: "Find Silver Crypt Seal", desc: "The corpse has risen! Run to the stone mausoleum and take the seal." },
-        3: { title: "Escape Cemetery Gate", desc: "Reach the iron gate at the north boundary to escape!" }
-      };
-      this.objectives.totalSteps = 3;
-      this.objectives.reset();
+      // Graveyard Objectives (Bilingual)
+      this.objectives.setLevelType('GRAVEYARD');
     } else {
       // Hospital
       this.world.buildHospitalLevel();
+      if (this.hud) this.hud.setLighting(this.world.lighting);
       this.player.reset(0, 9);
       this.soundscape.setGraveyardMode(false);
 
@@ -244,14 +269,8 @@ export class Game {
         new THREE.Vector3(0, 0, 0)
       ]);
 
-      this.objectives.steps = {
-        1: { title: "Find Generator Key", desc: "Search the Doctor's Office to locate the missing Generator Key." },
-        2: { title: "Unlock Substation", desc: "Unlock the heavy iron substation door in the north corridor." },
-        3: { title: "Activate Generator", desc: "Pull the high-voltage breaker to restore emergency power." },
-        4: { title: "ESCAPE THE HOSPITAL", desc: "Evade the hunting entity and reach the Main Security Gate!" }
-      };
-      this.objectives.totalSteps = 4;
-      this.objectives.reset();
+      // Hospital Objectives (Bilingual)
+      this.objectives.setLevelType('HOSPITAL');
     }
 
     this.soundscape.setWeepingEnabled(config.enableWeepingAmbience);

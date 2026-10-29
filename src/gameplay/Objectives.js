@@ -1,33 +1,28 @@
 /**
- * DARKNESS: THE HAUNTED WORLD
- * Level 1 Objective Tracker & Quest Progression
+ * DARKNESS: THE HAUNTED WORLD - Phase 3
+ * Level 1 & Level 2 Bilingual Objective Tracker & Quest Progression
  */
+
+import { i18n } from '../ui/Localization.js';
 
 export class ObjectiveManager {
   constructor(onObjectiveChange) {
     this.onObjectiveChange = onObjectiveChange;
     this.currentStep = 1;
-    this.totalSteps = 4;
+    this.levelType = 'HOSPITAL';
     this.isCompleted = false;
 
-    this.steps = {
-      1: {
-        title: "Find Generator Key",
-        desc: "Search the Doctor's Office to locate the missing Generator Key."
-      },
-      2: {
-        title: "Unlock Electrical Substation",
-        desc: "Head down the north corridor and unlock the heavy iron substation door."
-      },
-      3: {
-        title: "Activate Main Power",
-        desc: "Pull the high-voltage breaker switch on the generator to restore emergency power."
-      },
-      4: {
-        title: "ESCAPE THE HOSPITAL",
-        desc: "The Surgeon has awakened! Run to the Main Security Exit Gate and escape!"
-      }
-    };
+    // Re-notify whenever language toggles
+    i18n.subscribe(() => {
+      this.notify();
+    });
+  }
+
+  setLevelType(type = 'HOSPITAL') {
+    this.levelType = type;
+    this.currentStep = 1;
+    this.isCompleted = false;
+    this.notify();
   }
 
   reset() {
@@ -37,15 +32,47 @@ export class ObjectiveManager {
   }
 
   getCurrentObjective() {
-    return this.steps[this.currentStep] || { title: "Survive", desc: "Escape the darkness." };
+    if (this.levelType === 'GRAVEYARD') {
+      if (this.currentStep === 1) {
+        return {
+          title: i18n.t('OBJ_GRAVE_1_TITLE'),
+          desc: i18n.t('OBJ_GRAVE_1_DESC')
+        };
+      } else if (this.currentStep === 2) {
+        return {
+          title: i18n.t('OBJ_GRAVE_2_TITLE'),
+          desc: i18n.t('OBJ_GRAVE_2_DESC')
+        };
+      } else {
+        return {
+          title: i18n.t('OBJ_GRAVE_3_TITLE'),
+          desc: i18n.t('OBJ_GRAVE_3_DESC')
+        };
+      }
+    } else {
+      // HOSPITAL
+      if (this.currentStep === 1) {
+        return {
+          title: i18n.t('OBJ_HOSPITAL_1_TITLE'),
+          desc: i18n.t('OBJ_HOSPITAL_1_DESC')
+        };
+      } else if (this.currentStep === 2) {
+        return {
+          title: i18n.t('OBJ_HOSPITAL_2_TITLE'),
+          desc: i18n.t('OBJ_HOSPITAL_2_DESC')
+        };
+      } else {
+        return {
+          title: i18n.t('OBJ_HOSPITAL_3_TITLE'),
+          desc: i18n.t('OBJ_HOSPITAL_3_DESC')
+        };
+      }
+    }
   }
 
   advanceTo(stepNumber) {
     if (stepNumber > this.currentStep) {
       this.currentStep = stepNumber;
-      if (this.currentStep > this.totalSteps) {
-        this.isCompleted = true;
-      }
       this.notify();
     }
   }

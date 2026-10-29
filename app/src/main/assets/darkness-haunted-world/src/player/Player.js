@@ -51,19 +51,24 @@ export class Player {
   }
 
   setupFlashlight() {
-    this.flashlight = new THREE.SpotLight(0xffeedd, CONFIG.PLAYER.FLASHLIGHT_INTENSITY);
-    this.flashlight.angle = CONFIG.PLAYER.FLASHLIGHT_ANGLE;
-    this.flashlight.penumbra = CONFIG.PLAYER.FLASHLIGHT_PENUMBRA;
-    this.flashlight.distance = CONFIG.PLAYER.FLASHLIGHT_DISTANCE;
-    this.flashlight.decay = 1.6;
+    this.flashlight = new THREE.SpotLight(0xfff2e6, 3.6);
+    this.flashlight.angle = Math.PI / 3.8;
+    this.flashlight.penumbra = 0.65;
+    this.flashlight.distance = 36;
+    this.flashlight.decay = 1.4;
     this.flashlight.castShadow = true;
 
     this.flashlightTarget = new THREE.Object3D();
     this.flashlight.target = this.flashlightTarget;
 
+    // Ambient body light so immediate floor and doors are always comfortably visible
+    this.ambientBodyLight = new THREE.PointLight(0xffeedd, 0.85, 14, 1.8);
+    this.ambientBodyLight.position.set(0, -0.2, 0);
+    this.camera.add(this.ambientBodyLight);
+
     this.camera.add(this.flashlight);
     this.camera.add(this.flashlightTarget);
-    this.flashlightTarget.position.set(0, 0, -5);
+    this.flashlightTarget.position.set(0, 0, -6);
     this.flashlight.position.set(0.18, -0.15, 0.1);
   }
 
