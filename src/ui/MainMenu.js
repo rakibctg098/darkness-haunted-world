@@ -1,6 +1,6 @@
 /**
- * DARKNESS: THE HAUNTED WORLD
- * Main Menu Screen
+ * DARKNESS: THE HAUNTED WORLD - Phase 3
+ * Main Menu Screen with Story Creator and Character Customizer Triggers
  */
 
 import { CONFIG } from '../config.js';
@@ -23,13 +23,15 @@ export class MainMenu {
 
   bindEvents() {
     const startBtn = document.getElementById('btn-start-game');
-    const levelBtn = document.getElementById('btn-level-select');
+    const storyCreatorBtn = document.getElementById('btn-menu-story-creator');
+    const charCustomizerBtn = document.getElementById('btn-menu-char-customizer');
     const settingsBtn = document.getElementById('btn-menu-settings');
     const aboutBtn = document.getElementById('btn-menu-about');
     const creditsBtn = document.getElementById('btn-menu-credits');
 
     if (startBtn) startBtn.addEventListener('click', () => this.callbacks.onStart?.());
-    if (levelBtn) levelBtn.addEventListener('click', () => this.callbacks.onLevelSelect?.());
+    if (storyCreatorBtn) storyCreatorBtn.addEventListener('click', () => this.callbacks.onStoryCreator?.());
+    if (charCustomizerBtn) charCustomizerBtn.addEventListener('click', () => this.callbacks.onCharCustomizer?.());
     if (settingsBtn) settingsBtn.addEventListener('click', () => this.callbacks.onSettings?.());
     if (aboutBtn) aboutBtn.addEventListener('click', () => this.callbacks.onAbout?.());
     if (creditsBtn) creditsBtn.addEventListener('click', () => this.callbacks.onCredits?.());

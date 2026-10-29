@@ -27,7 +27,12 @@ const STATIC_ASSETS = [
   './src/gameplay/Inventory.js',
   './src/gameplay/Interaction.js',
   './src/gameplay/Objectives.js',
+  './src/gameplay/StoryDefinitions.js',
   './src/gameplay/SaveSystem.js',
+  './src/world/World.js',
+  './src/world/Lighting.js',
+  './src/world/Environment.js',
+  './src/world/GraveyardEnvironment.js',
   './src/audio/AudioManager.js',
   './src/audio/HorrorSoundscape.js',
   './src/ui/HUD.js',
@@ -36,6 +41,8 @@ const STATIC_ASSETS = [
   './src/ui/Settings.js',
   './src/ui/About.js',
   './src/ui/Credits.js',
+  './src/ui/StoryCreator.js',
+  './src/ui/CharacterCustomizer.js',
   './pwa/InstallPrompt.js'
 ];
 

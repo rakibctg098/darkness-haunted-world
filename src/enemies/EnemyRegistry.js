@@ -26,6 +26,27 @@ export const ENEMY_REGISTRY = {
     height: 2.15
   },
 
+  CORPSE: {
+    id: "CORPSE",
+    name: "The Risen Corpse",
+    title: "The Awakening Dead (কবর থেকে লাশ)",
+    description: "An unholy, decayed corpse that erupts straight out of the graveyard dirt. It sprints with unnatural, bone-cracking speed and relentless hunger.",
+    patrolSpeed: 2.8,
+    investigateSpeed: 4.0,
+    chaseSpeed: 6.2,
+    attackRange: 1.5,
+    attackDamage: 50,
+    attackCooldown: 1.1,
+    detectionRange: 19.0,
+    hearingRangeWalk: 7.0,
+    hearingRangeSprint: 20.0,
+    fieldOfViewDeg: 140,
+    fearFactor: 1.8,
+    vulnerability: "Can be briefly stunned by intense direct light or obstacles.",
+    color: 0x3d4338,
+    height: 1.9
+  },
+
   WIDOW: {
     id: "WIDOW",
     name: "The Widow",

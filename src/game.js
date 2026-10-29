@@ -1,7 +1,7 @@
 /**
- * DARKNESS: THE HAUNTED WORLD - Phase 2
+ * DARKNESS: THE HAUNTED WORLD - Phase 3
  * Master Game Loop & State Coordinator
- * Phase 2 features: Lockers, Hiding, Lore Notes Modal, Checkpoints, and Stealth Ratings
+ * Phase 3 features: Story Creator, Character Customizer, Cursed Graveyard, Corpse Rising, and Ghostly Weeping
  */
 
 import { CONFIG } from './config.js';
@@ -23,6 +23,8 @@ import { PauseMenu } from './ui/PauseMenu.js';
 import { SettingsMenu } from './ui/Settings.js';
 import { AboutScreen } from './ui/About.js';
 import { CreditsScreen } from './ui/Credits.js';
+import { StoryCreator } from './ui/StoryCreator.js';
+import { CharacterCustomizer } from './ui/CharacterCustomizer.js';
 
 export class Game {
   constructor() {
@@ -57,12 +59,21 @@ export class Game {
     this.settingsMenu = null;
     this.aboutScreen = null;
     this.creditsScreen = null;
+    this.storyCreator = null;
+    this.charCustomizer = null;
 
-    // Phase 2 Metrics & Checkpoints
+    // Phase 2 & 3 Metrics & Current Story
     this.gameStartTime = 0;
     this.elapsedTime = 0;
     this.timesSpotted = 0;
     this.lastSpottedState = false;
+    this.activeStoryConfig = {
+      title: 'The Last Patient',
+      location: 'HOSPITAL',
+      enemyId: 'SURGEON',
+      difficulty: 'NORMAL',
+      enableWeepingAmbience: true
+    };
 
     this.init();
   }
@@ -108,9 +119,8 @@ export class Game {
 
     this.mainMenu = new MainMenu({
       onStart: () => this.startGame(),
-      onLevelSelect: () => {
-        this.hud.showNotification('Level 1: St. Jude Asylum (Active)');
-      },
+      onStoryCreator: () => this.storyCreator.show(),
+      onCharCustomizer: () => this.charCustomizer.show(),
       onSettings: () => this.settingsMenu.show(),
       onAbout: () => this.aboutScreen.show(),
       onCredits: () => this.creditsScreen.show()
@@ -125,6 +135,14 @@ export class Game {
 
     this.settingsMenu = new SettingsMenu({
       onChange: (newSettings) => this.applySettings(newSettings)
+    });
+
+    this.storyCreator = new StoryCreator({
+      onLaunchStory: (config) => this.launchCustomStory(config)
+    });
+
+    this.charCustomizer = new CharacterCustomizer({
+      onApply: (charConfig) => this.applyCharacterConfig(charConfig)
     });
 
     this.aboutScreen = new AboutScreen();
@@ -157,7 +175,7 @@ export class Game {
 
   setupGameWorld() {
     this.world = new World(this.scene, this.collision, this.interaction);
-    this.world.buildLevel1();
+    this.world.buildHospitalLevel();
 
     this.player = new Player(this.camera, this.collision, this.audio);
     this.player.reset(0, 9); // Spawn in Reception
@@ -176,6 +194,97 @@ export class Game {
       new THREE.Vector3(8, 0, -3),
       new THREE.Vector3(0, 0, 0)
     ]);
+  }
+
+  launchCustomStory(config) {
+    this.activeStoryConfig = config;
+    this.audio.init();
+    this.audio.resume();
+
+    // Build selected world
+    if (config.location === 'GRAVEYARD') {
+      this.world.buildGraveyardLevel();
+      this.player.reset(0, 10); // Entrance path
+      this.soundscape.setGraveyardMode(true);
+
+      const enemyDef = ENEMY_REGISTRY[config.enemyId] || ENEMY_REGISTRY.CORPSE;
+      this.enemy.rebuild(enemyDef);
+      this.enemy.mesh.position.set(0, -2.5, -8); // Buried in grave initially
+      this.enemy.ai.setWaypoints([
+        new THREE.Vector3(0, 0, -8),
+        new THREE.Vector3(-14, 0, -12),
+        new THREE.Vector3(14, 0, -6),
+        new THREE.Vector3(-15, 0, -14),
+        new THREE.Vector3(0, 0, 2)
+      ]);
+
+      // Graveyard Objectives
+      this.objectives.steps = {
+        1: { title: "Explore Cursed Ground", desc: "Inspect the fresh open grave in the central clearing." },
+        2: { title: "Find Silver Crypt Seal", desc: "The corpse has risen! Run to the stone mausoleum and take the seal." },
+        3: { title: "Escape Cemetery Gate", desc: "Reach the iron gate at the north boundary to escape!" }
+      };
+      this.objectives.totalSteps = 3;
+      this.objectives.reset();
+    } else {
+      // Hospital
+      this.world.buildHospitalLevel();
+      this.player.reset(0, 9);
+      this.soundscape.setGraveyardMode(false);
+
+      const enemyDef = ENEMY_REGISTRY[config.enemyId] || ENEMY_REGISTRY.SURGEON;
+      this.enemy.rebuild(enemyDef);
+      this.enemy.mesh.position.set(0, 0, -6);
+      this.enemy.ai.setWaypoints([
+        new THREE.Vector3(0, 0, -6),
+        new THREE.Vector3(0, 0, -18),
+        new THREE.Vector3(-8, 0, -13),
+        new THREE.Vector3(0, 0, -10),
+        new THREE.Vector3(8, 0, -3),
+        new THREE.Vector3(0, 0, 0)
+      ]);
+
+      this.objectives.steps = {
+        1: { title: "Find Generator Key", desc: "Search the Doctor's Office to locate the missing Generator Key." },
+        2: { title: "Unlock Substation", desc: "Unlock the heavy iron substation door in the north corridor." },
+        3: { title: "Activate Generator", desc: "Pull the high-voltage breaker to restore emergency power." },
+        4: { title: "ESCAPE THE HOSPITAL", desc: "Evade the hunting entity and reach the Main Security Gate!" }
+      };
+      this.objectives.totalSteps = 4;
+      this.objectives.reset();
+    }
+
+    this.soundscape.setWeepingEnabled(config.enableWeepingAmbience);
+
+    this.state = 'PLAYING';
+    this.gameStartTime = Date.now();
+    this.timesSpotted = 0;
+    this.mainMenu.hide();
+    document.getElementById('hud-screen').style.display = 'block';
+    this.hud.showNotification(`Story Launched: ${config.title}`);
+  }
+
+  applyCharacterConfig(charConfig) {
+    if (this.player && this.player.flashlight) {
+      this.player.flashlight.color.set(charConfig.flashlightColor || '#ffeedd');
+    }
+
+    if (charConfig.startingItem === 'BATTERY') {
+      this.inventory.addBattery();
+      this.hud.showNotification('Bonus Battery Added to Inventory');
+    } else if (charConfig.startingItem === 'ADRENALINE') {
+      this.player.injectAdrenaline(8);
+      this.hud.showNotification('Starting Adrenaline Rush Activated!');
+    }
+
+    if (charConfig.enemyAggression === 'RELENTLESS') {
+      this.enemy.ai.config.chaseSpeed += 0.8;
+      this.enemy.ai.config.detectionRange += 4.0;
+    } else if (charConfig.enemyAggression === 'BERSERK') {
+      this.enemy.ai.config.chaseSpeed += 1.4;
+      this.enemy.ai.config.attackDamage += 15;
+    }
+    this.hud.showNotification('Character modifications applied!');
   }
 
   setupEventListeners() {
@@ -237,14 +346,7 @@ export class Game {
   }
 
   startGame() {
-    this.audio.init();
-    this.audio.resume();
-    this.state = 'PLAYING';
-    this.gameStartTime = Date.now();
-    this.timesSpotted = 0;
-    this.mainMenu.hide();
-    document.getElementById('hud-screen').style.display = 'block';
-    this.hud.showNotification('Investigate the hospital. Search for the Generator Key.');
+    this.launchCustomStory(this.activeStoryConfig);
   }
 
   pauseGame() {
@@ -265,38 +367,41 @@ export class Game {
     this.pauseMenu.hide();
 
     let spawnX = 0;
-    let spawnZ = 9;
+    let spawnZ = this.activeStoryConfig.location === 'GRAVEYARD' ? 10 : 9;
 
-    if (fromCheckpoint) {
+    if (fromCheckpoint && this.world.environment && this.world.environment.checkpoints) {
       if (this.world.environment.checkpoints.hasPower) {
-        // Respawn near Substation with power active
         spawnX = 7.0;
         spawnZ = -10.0;
         this.inventory.addItem('generator_key');
         this.objectives.advanceTo(4);
       } else if (this.world.environment.checkpoints.hasKey) {
-        // Respawn near Doctor's Office with key in hand
         spawnX = -7.0;
         spawnZ = -3.0;
         this.inventory.addItem('generator_key');
         this.objectives.advanceTo(2);
-      } else {
-        this.inventory.reset();
-        this.objectives.reset();
-        this.world.buildLevel1();
       }
     } else {
       this.inventory.reset();
       this.objectives.reset();
-      this.world.buildLevel1();
+      if (this.activeStoryConfig.location === 'GRAVEYARD') {
+        this.world.buildGraveyardLevel();
+      } else {
+        this.world.buildHospitalLevel();
+      }
     }
 
     this.player.reset(spawnX, spawnZ);
 
-    // Reset enemy to patrol corridor
-    this.enemy.mesh.position.set(0, 0, -6);
-    this.enemy.ai.state = 'PATROL';
-    this.enemy.setChasing(false);
+    if (this.activeStoryConfig.location === 'GRAVEYARD') {
+      this.enemy.mesh.position.set(0, -2.5, -8);
+      this.enemy.ai.state = 'PATROL';
+      this.enemy.setChasing(false);
+    } else {
+      this.enemy.mesh.position.set(0, 0, -6);
+      this.enemy.ai.state = 'PATROL';
+      this.enemy.setChasing(false);
+    }
 
     this.state = 'PLAYING';
     this.gameStartTime = Date.now();
@@ -370,9 +475,9 @@ export class Game {
       }
     }
 
-    // Enable/disable checkpoint button on death screen
     const chkBtn = document.getElementById('btn-death-checkpoint');
-    const hasCheckpoint = this.world.environment.checkpoints.hasKey || this.world.environment.checkpoints.hasPower;
+    const hasCheckpoint = this.world.environment && this.world.environment.checkpoints &&
+      (this.world.environment.checkpoints.hasKey || this.world.environment.checkpoints.hasPower);
     if (chkBtn) {
       chkBtn.style.display = hasCheckpoint ? 'block' : 'none';
     }
@@ -428,31 +533,34 @@ export class Game {
       this.player.update(delta, this.controls);
       this.world.update(delta);
 
-      // Check forward interaction raycast
+      // Automatic cinematic proximity trigger for Graveyard corpse awakening
+      if (this.activeStoryConfig && this.activeStoryConfig.location === 'GRAVEYARD' &&
+          this.world.environment && this.world.environment.triggerCorpseAwakening &&
+          !this.world.environment.hasCorpseRisen) {
+        const distToGrave = Math.hypot(this.player.position.x - 0, this.player.position.z - (-8));
+        if (distToGrave < 5.5) {
+          this.world.environment.triggerCorpseAwakening(this);
+        }
+      }
+
       const camDir = new THREE.Vector3();
       this.camera.getWorldDirection(camDir);
       const focusedItem = this.interaction.update(this.player.position, camDir);
 
-      // Update Enemy
       let distToEnemy = 999;
       if (this.enemy) {
         const aiStatus = this.enemy.update(delta, this.player, this.collision, this.audio);
         distToEnemy = aiStatus.distToPlayer;
 
-        // Track spotted times for stealth rating
         if (aiStatus.isChasing && !this.lastSpottedState) {
           this.timesSpotted += 1;
         }
         this.lastSpottedState = aiStatus.isChasing;
       }
 
-      // Update Soundscape tension & heartbeat
       this.soundscape.update(delta, this.player, this.enemy);
-
-      // Update HUD
       this.hud.update(this.player, this.objectives.getCurrentObjective(), focusedItem, distToEnemy);
 
-      // Check Player Death
       if (this.player.isDead) {
         this.onPlayerDied();
       }

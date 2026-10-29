@@ -438,4 +438,175 @@ export class AudioManager {
     osc.start(now);
     osc.stop(now + 3.1);
   }
+
+  // --- Phase 3: Ghostly Female Weeping / Crying Sound (কান্নার আওয়াজ) ---
+  playGhostlyWeeping() {
+    if (!this.ctx || !this.isInitialized) return;
+    const now = this.ctx.currentTime;
+
+    // Sorrowful vocal formant oscillators (woman sobbing in the darkness)
+    const voiceOsc = this.ctx.createOscillator();
+    const voiceGain = this.ctx.createGain();
+    const formantFilter = this.ctx.createBiquadFilter();
+
+    voiceOsc.type = 'sawtooth';
+    // Sobbing pitch: rises with grief, trembles, then falls with a broken breath
+    voiceOsc.frequency.setValueAtTime(380, now);
+    voiceOsc.frequency.linearRampToValueAtTime(460, now + 0.4);
+    voiceOsc.frequency.exponentialRampToValueAtTime(320, now + 1.2);
+    voiceOsc.frequency.linearRampToValueAtTime(410, now + 1.6);
+    voiceOsc.frequency.exponentialRampToValueAtTime(280, now + 2.5);
+
+    // Formant filter creates realistic human vocal tract resonance
+    formantFilter.type = 'bandpass';
+    formantFilter.frequency.setValueAtTime(850, now);
+    formantFilter.Q.setValueAtTime(5.5, now);
+
+    // Sobbing tremolo (vibrato)
+    const tremolo = this.ctx.createOscillator();
+    tremolo.frequency.setValueAtTime(5.8, now); // 5.8 Hz sobbing quiver
+    const tremoloGain = this.ctx.createGain();
+    tremoloGain.gain.setValueAtTime(0.12, now);
+    tremolo.connect(tremoloGain);
+
+    voiceGain.gain.setValueAtTime(0.01, now);
+    voiceGain.gain.linearRampToValueAtTime(0.28, now + 0.5);
+    voiceGain.gain.exponentialRampToValueAtTime(0.001, now + 2.6);
+
+    voiceOsc.connect(formantFilter);
+    formantFilter.connect(voiceGain);
+    voiceGain.connect(this.ambientGain);
+
+    tremolo.start(now);
+    voiceOsc.start(now);
+    tremolo.stop(now + 2.7);
+    voiceOsc.stop(now + 2.7);
+
+    // Whispered breath intake
+    this.playBreathyInhale(now + 1.2);
+  }
+
+  playBreathyInhale(time) {
+    if (!this.ctx) return;
+    try {
+      const bufferSize = this.ctx.sampleRate * 0.8;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1400, time);
+      filter.Q.setValueAtTime(4.0, time);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.01, time);
+      gain.gain.linearRampToValueAtTime(0.14, time + 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.75);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ambientGain);
+
+      noise.start(time);
+      noise.stop(time + 0.8);
+    } catch (e) {}
+  }
+
+  // --- Phase 3: Corpse Rising / Grave Earth Eruption (কবর থেকে লাশ ওঠার আওয়াজ) ---
+  playCorpseRising() {
+    if (!this.ctx || !this.isInitialized) return;
+    const now = this.ctx.currentTime;
+
+    // 1. Earth tearing / soil rumbling (heavy low explosion)
+    const earthOsc = this.ctx.createOscillator();
+    const earthGain = this.ctx.createGain();
+    earthOsc.type = 'sawtooth';
+    earthOsc.frequency.setValueAtTime(85, now);
+    earthOsc.frequency.exponentialRampToValueAtTime(28, now + 1.8);
+
+    earthGain.gain.setValueAtTime(0.5, now);
+    earthGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+
+    earthOsc.connect(earthGain);
+    earthGain.connect(this.sfxGain);
+    earthOsc.start(now);
+    earthOsc.stop(now + 2.1);
+
+    // 2. Bone crackling & snapping
+    [0.1, 0.28, 0.45, 0.72, 1.1].forEach(delay => {
+      const snapOsc = this.ctx.createOscillator();
+      const snapGain = this.ctx.createGain();
+      snapOsc.type = 'triangle';
+      snapOsc.frequency.setValueAtTime(1600 + Math.random() * 800, now + delay);
+      snapOsc.frequency.exponentialRampToValueAtTime(300, now + delay + 0.04);
+
+      snapGain.gain.setValueAtTime(0.35, now + delay);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.06);
+
+      snapOsc.connect(snapGain);
+      snapGain.connect(this.sfxGain);
+      snapOsc.start(now + delay);
+      snapOsc.stop(now + delay + 0.08);
+    });
+
+    // 3. Undead guttural breath / corpse roar
+    const roarOsc = this.ctx.createOscillator();
+    const roarGain = this.ctx.createGain();
+    const roarFilter = this.ctx.createBiquadFilter();
+
+    roarOsc.type = 'sawtooth';
+    roarOsc.frequency.setValueAtTime(45, now + 0.4);
+    roarOsc.frequency.linearRampToValueAtTime(110, now + 1.1);
+    roarOsc.frequency.exponentialRampToValueAtTime(35, now + 2.2);
+
+    roarFilter.type = 'lowpass';
+    roarFilter.frequency.setValueAtTime(320, now + 0.4);
+
+    roarGain.gain.setValueAtTime(0.05, now + 0.4);
+    roarGain.gain.linearRampToValueAtTime(0.48, now + 1.2);
+    roarGain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
+
+    roarOsc.connect(roarFilter);
+    roarFilter.connect(roarGain);
+    roarGain.connect(this.sfxGain);
+    roarOsc.start(now + 0.4);
+    roarOsc.stop(now + 2.5);
+  }
+
+  // --- Phase 3: Graveyard Thunder & Lightning (বজ্রপাত) ---
+  playThunderCrack() {
+    if (!this.ctx || !this.isInitialized) return;
+    const now = this.ctx.currentTime;
+
+    const snap = this.ctx.createOscillator();
+    const snapGain = this.ctx.createGain();
+    snap.type = 'triangle';
+    snap.frequency.setValueAtTime(350, now);
+    snap.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+    snapGain.gain.setValueAtTime(0.65, now);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    snap.connect(snapGain);
+    snapGain.connect(this.sfxGain);
+    snap.start(now);
+    snap.stop(now + 0.3);
+
+    // Low rolling thunder echo
+    const rumble = this.ctx.createOscillator();
+    const rumbleGain = this.ctx.createGain();
+    rumble.type = 'sawtooth';
+    rumble.frequency.setValueAtTime(55, now + 0.1);
+    rumble.frequency.exponentialRampToValueAtTime(25, now + 3.2);
+
+    rumbleGain.gain.setValueAtTime(0.4, now + 0.1);
+    rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+
+    rumble.connect(rumbleGain);
+    rumbleGain.connect(this.sfxGain);
+    rumble.start(now + 0.1);
+    rumble.stop(now + 3.6);
+  }
 }
